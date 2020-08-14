@@ -30,6 +30,7 @@ string hasData(string s) {
 }
 
 int main() {
+
   uWS::Hub h;
 
   // Create a Kalman Filter instance
