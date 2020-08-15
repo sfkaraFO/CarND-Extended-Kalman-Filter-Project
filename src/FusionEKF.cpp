@@ -40,13 +40,16 @@ FusionEKF::FusionEKF() {
               0, 1, 0, 0;
   Hj_ = Eigen::MatrixXd::Zero(3,4);          
 
-  ekf_.Init(std::move(Eigen::VectorXd::Zero(4)),      // x_
+  ekf_.Init(std::move(Eigen::VectorXd::Ones(4)),      // x_
             std::move(Eigen::MatrixXd::Zero(4,4)),    // P_
             std::move(Eigen::MatrixXd::Identity(4,4)),// F_
             std::move(Eigen::MatrixXd::Zero(3,4)),    // H_
             std::move(Eigen::MatrixXd::Zero(3,3)),    // R_
             std::move(Eigen::MatrixXd::Zero(4,4)));   // Q_
-
+  ekf_.P_ << 5, 0, 0, 0,
+             0, 5, 0, 0,
+             0, 0, 20, 0,
+             0, 0, 0, 20;
   noise_ax = 9;
   noise_ay = 9;
 
@@ -76,23 +79,24 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
        *  TODO: Convert radar from polar to cartesian coordinates 
        *        and initialize state.
        */
+      // First radar measurement is used to initialize the position of the object.
+      // Although radar provides the velocity measurement we do not have yaw angle to convert it to velocity information.
       double rho		= measurement_pack.raw_measurements_(0);
       double phi		= measurement_pack.raw_measurements_(1);
-      double rhoDot	= measurement_pack.raw_measurements_(2);
       double px = rho * cos(phi);
-      double py = rho * cos(phi);
+      double py = rho * sin(phi);
       ekf_.x_(0) = px;
       ekf_.x_(1) = py;
-
     }
     else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
-      // TODO: Initialize state.
+      // First lidar measurements are used to initialize the position of the object.
       double px		= measurement_pack.raw_measurements_(0);
       double py		= measurement_pack.raw_measurements_(1);
       ekf_.x_(0) = px;
       ekf_.x_(1) = py;
     }
 
+    // Initialize the timestamp.
     previous_timestamp_ = measurement_pack.timestamp_;
 
     // done initializing, no need to predict or update
@@ -110,13 +114,16 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
    * TODO: Update the process noise covariance matrix.
    * Use noise_ax = 9 and noise_ay = 9 for your Q matrix.
    */
+  // Calculate the delta-t to predict the state.
   double dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0;
 
   previous_timestamp_ = measurement_pack.timestamp_;
 
+  // Modify F so that it contains the delta-t
   ekf_.F_(0,2) = dt;
   ekf_.F_(1,3) = dt;
 
+  // Modify Q so that it contains the delta-t
   ekf_.Q_(0,0) = std::pow(dt,4)*noise_ax/4;
   ekf_.Q_(0,2) = std::pow(dt,3)*noise_ax/2;
   ekf_.Q_(1,1) = std::pow(dt,4)*noise_ay/4;
@@ -126,6 +133,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   ekf_.Q_(3,1) = std::pow(dt,3)*noise_ay/2;
   ekf_.Q_(3,3) = std::pow(dt,2)*noise_ay;
 
+  // EKF prediction
   ekf_.Predict();
 
   /**
@@ -138,16 +146,17 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
    * - Update the state and covariance matrices.
    */
 
+  // If the sensor type is RADAR then use the UpdateRadar function which uses Jacobian matrix
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
     // TODO: Radar updates
 	  ekf_.R_ = R_radar_;
 	  ekf_.H_ = tools.CalculateJacobian(ekf_.x_);
-	  ekf_.UpdateEKF(measurement_pack.raw_measurements_);
-  } else {
+	  ekf_.UpdateRadar(measurement_pack.raw_measurements_);
+  } else {   // If the sensor type is LIDAR then use the UpdateLidar function which uses linear equations
     // TODO: Laser updates
 	  ekf_.R_ = R_laser_;
 	  ekf_.H_ = H_laser_;
-	  ekf_.Update(measurement_pack.raw_measurements_);
+	  ekf_.UpdateLidar(measurement_pack.raw_measurements_);
   }
 
   // print the output

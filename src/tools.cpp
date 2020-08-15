@@ -41,7 +41,6 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
    // All is well
    else{
       uint32_t dim = estimations[0].size();
-      std::cout << "estimation dim:" << dim << std::endl;
       Eigen::VectorXd RMSE = VectorXd::Zero(dim);
       VectorXd residual = VectorXd::Zero(dim);
       // Integrate the square of resudials
