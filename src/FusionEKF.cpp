@@ -40,16 +40,15 @@ FusionEKF::FusionEKF() {
               0, 1, 0, 0;
   Hj_ = Eigen::MatrixXd::Zero(3,4);          
 
+  // Call the EKF init function so that matrices are initialized.
   ekf_.Init(std::move(Eigen::VectorXd::Ones(4)),      // x_
             std::move(Eigen::MatrixXd::Zero(4,4)),    // P_
             std::move(Eigen::MatrixXd::Identity(4,4)),// F_
             std::move(Eigen::MatrixXd::Zero(3,4)),    // H_
             std::move(Eigen::MatrixXd::Zero(3,3)),    // R_
             std::move(Eigen::MatrixXd::Zero(4,4)));   // Q_
-  ekf_.P_ << 5, 0, 0, 0,
-             0, 5, 0, 0,
-             0, 0, 20, 0,
-             0, 0, 0, 20;
+
+  // Initialize the process noise values
   noise_ax = 9;
   noise_ay = 9;
 
@@ -96,6 +95,12 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       ekf_.x_(1) = py;
     }
 
+    // Initialize the state covariance
+    ekf_.P_ << 5, 0, 0, 0,
+              0, 5, 0, 0,
+              0, 0, 20, 0,
+              0, 0, 0, 20;
+    
     // Initialize the timestamp.
     previous_timestamp_ = measurement_pack.timestamp_;
 
