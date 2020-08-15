@@ -1,4 +1,11 @@
-# Extended Kalman Filter Project Starter Code
+# Extended Kalman Filter Project **Complete** Code
+
+This is a completed version of Udacity's CarND - Extended Kalman Filter Project. Information about the project is provided below by Udacity. 
+
+E-mail: skara8@ford.com.tr
+
+
+
 Self-Driving Car Engineer Nanodegree Program
 
 In this project you will utilize a kalman filter to estimate the state of a moving object of interest with noisy lidar and radar measurements. Passing the project requires obtaining RMSE values that are lower than the tolerance outlined in the project rubric. 
