@@ -40,8 +40,9 @@ void KalmanFilter::UpdateLidar(const VectorXd &z) {
   // Calculate the innovation
   VectorXd y = z - H_*x_;
   // Calculate the innovation covariance and Kalman coefficient
-  MatrixXd S = H_*P_*H_.transpose() + R_;
-  MatrixXd K = P_*H_.transpose()*S.inverse();
+  MatrixXd Ht = H_.transpose();
+  MatrixXd S = H_*P_*Ht + R_;
+  MatrixXd K = P_*Ht*S.inverse();
 
   // Update the state
   x_ = x_ + (K * y);
@@ -84,8 +85,9 @@ void KalmanFilter::UpdateRadar(const VectorXd &z) {
   while (y(1)<-M_PI) y(1)+=2.*M_PI;
 
   // Calculate the innovation covariance and Kalman coefficient
-  MatrixXd S = H_*P_*H_.transpose() + R_;
-  MatrixXd K = P_*H_.transpose()*S.inverse();
+  MatrixXd Ht = H_.transpose();
+  MatrixXd S = H_*P_*Ht + R_;
+  MatrixXd K = P_*Ht*S.inverse();
 
   // Update the state
   x_ = x_ + (K * y);
